@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} {% if page_title %}{{page_title}}{% else %}Mahsulotlar{% endif %} - Cosmetic Store{% endblock %}
+
+{% block content %}
+
+<section class="products-page">
+    <div class="container products-page-layout">
+        <aside class="filters-sidebar">
+            <h3>Filtr</h3>
+
+            <form method="get" action="{% url 'shop:product_list' %}">
+                {% if query %}
+                    <input type="hidden" name="q" value="{{ query }}">
+                {% endif %}
+                <input type="hidden" name="view" value="{{view_mode}}">
+
+                {% if view_mode != 'brand' %}
+                <div class="filter-group">
+                    <h4>Kategoriya</h4>
+                    {% for category in categories %}
+                    <label class="filter-option {% if selected_category == category.id|stringformat:'s' %}active{% endif %}">
+                        <input type="radio" name="category" value="{{ category.id }}"
+                               {% if selected_category == category.id|stringformat:"s" %}checked{% endif %}
+                               onchange="this.form.submit()">
+                        {{category.name}}
+                    </label>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if view_mode != 'category' %}
+                <div class="filter-group">
+                    <h4>Brend</h4>
+                    {% for brand in brands %}
+                    <label class="filter-option {% if selected_brand == brand.id|stringformat:'s' %}active{% endif %}">
+                        <input type="radio" name="brand" value="{{ brand.id }}"
+                               {% if selected_brand == brand.id|stringformat:"s" %}checked{% endif %}
+                               onchange="this.form.submit()">
+                        {{ brand.name }}
+                    </label>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <a href="{% url 'shop:product_list' %}" class="clear-filters">Filtrlarni tozalash</a>
+            </form>
+        </aside>
+
+        <div class="products-content">
+            <h2>{% if page_title %}{{ page_title }}{% else %}Barcha mahsulotlar{% endif %}</h2>
+
+            <div class="products-grid">
+                {% for product in products %}
+                <div class="product-card">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                    {% else %}
+                    <div class="product-img-placeholder"></div>
+                    {% endif %}
+
+                    {% if product.is_on_discount %}
+                        <span class="discount-badge">Chegirma</span>
+                    {% endif %}
+                    <button class="favorite-btn {% if product.id in user_favorite_ids %}active{% endif %}" onclick="toggleFavorite({{ product.id }},this)">♥</button>
+
+                    <h3>{{ product.name }}</h3>
+                    <p class="product-brand">{{ product.brand.name }}</p>
+
+                    <div class="product-price">
+                        {% if product.is_on_discount %}
+                            <span class="old-price">{{product.price }} so'm</span>
+                            <span class="new-price">{{ product.discount_price }} so'm</span>
+                        {% else %}
+                            <span class="new-price">{{ product.price }} so'm</span>
+                        {% endif %}
+                    </div>
+
+                    <button class="btn-add-cart" onclick="addToCart({{ product.id }}, this)">Savatga qo'shish</button>
+                </div>
+                {% empty %}
+                <p>Hech qanday mahsulot topilmadi.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

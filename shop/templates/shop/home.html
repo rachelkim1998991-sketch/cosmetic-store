@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} Bosh sahifa-Cosmetic Store{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+    <div class="container">
+        <h1>Go'zallik siz uchun</h1>
+        <p>Eng sifatli kosmetika mahsulotlari bir joyda</p>
+    </div>
+</section>
+
+<section class="categories-section">
+    <div class="container">
+        <h2>Kategoriyalar</h2>
+        <div class="categories-grid">
+            {% for category in categories %}
+            <a href="#" class="category-card">
+                <span>{{category.name}}</span>
+            </a>
+            {% empty %}
+            <p>Hozircha kategoriyalar qo'shilmagan</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="products-section">
+    <div class="container">
+        <h2>Mahsulotlar</h2>
+        <div class="products-grid">
+            {% for product in products %}
+            <div class="product-card">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}"  alt="{{product.name}}">
+                {% else %}
+                    <div class="product-img-placeholder"></div>
+                {% endif %}
+
+                {% if product.is_on_discount %}
+                    <span class="discount-badge">Chegirma</span>
+                {% endif %}
+                <button class="favorite-btn {% if product.id in user_favorite_ids %}active{% endif %}" onclick="toggleFavorite({{ product.id }},this)">♥</button>
+
+                <h3>{{ product.name }}</h3>
+                <p class="product-brand">{{product.brand.name}}</p>
+
+                <div class="product-price">
+                    {% if product.is_on_discount %}
+                        <span class="old-price">{{ product.price }} so'm</span>
+                        <span class="new-price">{{ product.discount_price }} so'm</span>
+                    {% else %}
+                        <span class="new-price">{{ product.price }} so'm</span>
+                    {% endif %}
+                </div>
+
+                <button class="btn-add-cart" onclick="addToCart({{ product.id }}, this)">Savatga qo'shish</button>
+            </div>
+            {% empty %}
+            <p>Hozircha mahslotlar qo'shilmagan.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% endblock %}

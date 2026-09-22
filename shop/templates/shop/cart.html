@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Savatcha-Cosmetic Store{% endblock %}
+
+{% block content %}
+
+<section class="cart-page">
+    <div class="container">
+        <h2>Savatcha</h2>
+
+        {% if cart_items %}
+        <div class="cart-list">
+            {% for item in cart_items %}
+            <div class="cart-item">
+                {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                {% else %}
+                    <div class="product-img-placeholder"></div>
+                {% endif %}
+
+                <div class="cart-item-info">
+                    <h3>{{ item.product.name }}</h3>
+                    <p class="product-brand">{{ item.product.brand.name }}</p>
+                    <p>Miqdor: {{ item.quantity }}</p>
+                    <p class="new-price">{{ item.product.final_price }}</p>
+                </div>
+
+                <button class="btn-remove" onclick="removeFromCart({{ item.id }})">O'chirish</button>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="cart-total">
+            <h3>Jami: {{ total }} so'm</h3>
+            <a href="#" class="btn-checkout">Buyurtma berish</a>
+        </div>
+
+        {% else %}
+        <p>Savatingiz bo'sh</p>
+        {% endif %}
+    </div>
+</section>
+
+{% endblock %}

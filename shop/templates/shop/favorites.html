@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sevimlilar-Cosmetic Store{% endblock %}
+
+{% block content %}
+
+<section class="favorites-page">
+    <div class="conrainer">
+        <h2>Sevimlilar</h2>
+
+        {% if favorites %}
+        <div class="products-grid">
+            {% for fav in favorites %}
+            <div class="product-card">
+                {% if fav.product.image %}
+                    <img src="{{ fav.product.image.url }}" alt="{{ fav.product.name }}">
+                {% else %}
+                    <div class="product-img-placeholder"></div>
+                {% endif %}
+
+                <h3>{{ fav.product.name }}</h3>
+                <p class="product-brand">{{ fav.product.brand.name }}</p>
+
+                <div class="product-price">
+                    <span class="new-price">{{ fav.product.final_price }} so'm</span>
+                </div>
+
+                <button class="btn-add-cart" onclick="addToCart({{ fav.product.id }},this)">Savatga qo'shish</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>Sevimlilar ro'yxati bo'sh</p>
+        {% endif %}
+    </div>
+</section>
+
+{% endblock %}
