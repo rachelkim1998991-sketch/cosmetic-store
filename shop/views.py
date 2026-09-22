@@ -148,7 +148,8 @@ def ai_assistant(request):
 
     catalog_lines=[]
     for p in products:
-        line=f"=ID:{p.id} | {p.name} | Brend: {p.brand.name} | Turi: {p.category.name} |Narxi: {p.final_price} so'm |Muammo: {p.skin_concern or 'ko\'rsatilmagan'}"
+        concern_text=p.skin_concern or "ko'rsatilmagan"
+        line=f"-ID: {p.id} | {p.name} | Brend: {p.brand.name} | Turi: {p.category.name} | Narxi: {p.final_price} so'm | Muammo: {concern_text}"
         catalog_lines.append(line)
     catalog_text="\n".join(catalog_lines)
 
