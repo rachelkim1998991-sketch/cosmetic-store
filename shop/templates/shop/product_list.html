@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %} {% if page_title %}{{page_title}}{% else %}Mahsulotlar{% endif %} - Cosmetic Store{% endblock %}
 
@@ -53,26 +54,28 @@
             <div class="products-grid">
                 {% for product in products %}
                 <div class="product-card">
-                    {% if product.image %}
-                        <img src="{{ product.image.url }}" alt="{{ product.name }}">
-                    {% else %}
-                    <div class="product-img-placeholder"></div>
-                    {% endif %}
-
                     {% if product.is_on_discount %}
                         <span class="discount-badge">Chegirma</span>
                     {% endif %}
-                    <button class="favorite-btn {% if product.id in user_favorite_ids %}active{% endif %}" onclick="toggleFavorite({{ product.id }},this)">♥</button>
+                    <button class="favorite-btn {% if product.id in user_favorite_ids %}active{% endif %}" onclick="toggleFavorite({{ product.id }}, this)">♥</button>
 
-                    <h3>{{ product.name }}</h3>
-                    <p class="product-brand">{{ product.brand.name }}</p>
+                    <a href="{% url 'shop:product_detail' product.id %}" class="product-card-link">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                        {% else %}
+                            <div class="product-img-placeholder"></div>
+                        {% endif %}
+
+                        <h3>{{ product.name }}</h3>
+                        <p class="product-brand">{{ product.brand.name }}</p>
+                    </a>
 
                     <div class="product-price">
                         {% if product.is_on_discount %}
-                            <span class="old-price">{{product.price }} so'm</span>
-                            <span class="new-price">{{ product.discount_price }} so'm</span>
+                            <span class="old-price">{{ product.price|uz_price }} so'm</span>
+                            <span class="new-price">{{ product.discount_price|uz_price }} so'm</span>
                         {% else %}
-                            <span class="new-price">{{ product.price }} so'm</span>
+                            <span class="new-price">{{ product.price|uz_price }} so'm</span>
                         {% endif %}
                     </div>
 

@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
-{% block title %}Sevimlilar-Cosmetic Store{% endblock %}
+{% block title %}Sevimlilar - Cosmetic Store{% endblock %}
 
 {% block content %}
 
 <section class="favorites-page">
-    <div class="conrainer">
+    <div class="container">
         <h2>Sevimlilar</h2>
 
         {% if favorites %}
@@ -23,15 +24,15 @@
                 <p class="product-brand">{{ fav.product.brand.name }}</p>
 
                 <div class="product-price">
-                    <span class="new-price">{{ fav.product.final_price }} so'm</span>
+                    <span class="new-price">{{ fav.product.final_price|uz_price }} so'm</span>
                 </div>
 
-                <button class="btn-add-cart" onclick="addToCart({{ fav.product.id }},this)">Savatga qo'shish</button>
+                <button class="btn-add-cart" onclick="addToCart({{ fav.product.id }}, this)">Savatga qo'shish</button>
             </div>
             {% endfor %}
         </div>
         {% else %}
-        <p>Sevimlilar ro'yxati bo'sh</p>
+        <p>Sevimlilar ro'yxati bo'sh.</p>
         {% endif %}
     </div>
 </section>

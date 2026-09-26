@@ -203,3 +203,19 @@ MAHSULOTLAR RO'YXATI:
                 {'reply': 'Bugungi so\'rovlar chegarasiga yetdik, biroz kuting va qayta urinib ko\'ring. 🙏'})
         return JsonResponse({'error': f'AI xizmatida xatolik: {error_text}'}, status=500)
     return JsonResponse({'reply': ai_reply})
+
+
+def product_detail(request, product_id):
+    product = Product.objects.select_related('brand', 'category').get(id=product_id)
+
+    user_favorite_ids = []
+    if request.user.is_authenticated:
+        user_favorite_ids = list(
+            Favorite.objects.filter(user=request.user).values_list('product_id', flat=True)
+        )
+
+    context = {
+        'product': product,
+        'user_favorite_ids': user_favorite_ids,
+    }
+    return render(request, 'shop/product_detail.html', context)

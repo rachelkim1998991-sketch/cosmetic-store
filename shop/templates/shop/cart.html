@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}Savatcha-Cosmetic Store{% endblock %}
 
@@ -23,7 +24,7 @@
                     <h3>{{ item.product.name }}</h3>
                     <p class="product-brand">{{ item.product.brand.name }}</p>
                     <p>Miqdor: {{ item.quantity }}</p>
-                    <p class="new-price">{{ item.product.final_price }}</p>
+                    <p class="new-price">{{ item.product.final_price|uz_price }}</p>
                 </div>
 
                 <button class="btn-remove" onclick="removeFromCart({{ item.id }})">O'chirish</button>

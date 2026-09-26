@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{{ product.name }} - Cosmetic Store{% endblock %}
+
+{% block content %}
+
+<section class="product-detail-page">
+    <div class="container product-detail-layout">
+
+        <div class="product-detail-image">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+                <div class="product-img-placeholder"></div>
+            {% endif %}
+        </div>
+
+        <div class="product-detail-info">
+            {% if product.is_on_discount %}
+                <span class="discount-badge">Chegirma</span>
+            {% endif %}
+
+            <h1>{{ product.name }}</h1>
+            <p class="product-brand">{{ product.brand.name }} — {{ product.category.name }}</p>
+
+            <div class="product-price">
+                {% if product.is_on_discount %}
+                    <span class="old-price">{{ product.price|uz_price }} so'm</span>
+                    <span class="new-price">{{ product.discount_price|uz_price }} so'm</span>
+                {% else %}
+                    <span class="new-price">{{ product.price|uz_price }} so'm</span>
+                {% endif %}
+            </div>
+
+            <div class="product-description">
+                <h3>Tavsif</h3>
+                <p>{{ product.description|default:"Tavsif hozircha qo'shilmagan." }}</p>
+            </div>
+
+            <p class="product-stock">Omborda qolgan: {{ product.stock }} dona</p>
+
+            <div class="product-detail-actions">
+                <button class="favorite-btn {% if product.id in user_favorite_ids %}active{% endif %}" onclick="toggleFavorite({{ product.id }}, this)">♥</button>
+                <button class="btn-add-cart" onclick="addToCart({{ product.id }}, this)">Savatga qo'shish</button>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}
