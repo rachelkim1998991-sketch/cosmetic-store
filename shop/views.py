@@ -133,49 +133,73 @@ def remove_from_cart(request,item_id):
 @require_POST
 def ai_assistant(request):
     try:
-        data=json.loads(request.body)
-        user_message=data.get('message','').strip()
-    except (json.JSONDecodeError,AttributeError):
-        return JsonResponse({'error':'Noto\'g\'ri so\'rov' },status=400)
+        data = json.loads(request.body)
+        user_message = data.get('message', '').strip()
+        history = data.get('history', [])
+    except (json.JSONDecodeError, AttributeError):
+        return JsonResponse({'error': 'Noto\'g\'ri so\'rov'}, status=400)
 
     if not user_message:
-        return JsonResponse({'error':'Xabar bo\'sh bo\'lmasligi kerak'},status=400)
+        return JsonResponse({'error': 'Xabar bo\'sh bo\'lmasligi kerak'}, status=400)
 
-    products=Product.objects.select_related('brand','category').all()
+    products = Product.objects.select_related('brand', 'category').all()
 
     if not products.exists():
-        return JsonResponse({'reply':'Hozircha bazada mahsulotlar mavjud emas.'})
+        return JsonResponse({'reply': 'Hozircha bazada mahsulotlar mavjud emas.'})
 
-    catalog_lines=[]
+    catalog_lines = []
     for p in products:
-        concern_text=p.skin_concern or "ko'rsatilmagan"
-        line=f"-ID: {p.id} | {p.name} | Brend: {p.brand.name} | Turi: {p.category.name} | Narxi: {p.final_price} so'm | Muammo: {concern_text}"
+        concern_text = p.skin_concern or "ko'rsatilmagan"
+        line = f"- ID:{p.id} | {p.name} | Brend: {p.brand.name} | Turi: {p.category.name} | Narxi: {p.final_price} so'm | Muammo: {concern_text}"
         catalog_lines.append(line)
-    catalog_text="\n".join(catalog_lines)
+    catalog_text = "\n".join(catalog_lines)
 
-    system_prompt=f"""Sen "Cosmetic Store" internet do'konining AI yordamchisisan.
-Sening vazifang-mijozning tashvishiga (terisi,sochi,muammosi) qarab, FAQAT quyidagi ro'yxatdagi mahsulotlardan mos kelganini tavsiya qilsh.
-Qoidalar:
-1.Faqat ro'yxatdagi mahsulotlardan tanla,o'zingdan mahsulot o'ylab topma.
-2.Agar ro'yxatda mos mahsulot bo'lmasa,buni ochiq ayt.
-3.Javobni o'zbek tilida,qisqa va samimiy uslubda yoz.
-4.Tavsiya qilganda mahsulot nomini,brendini,narxini ayt,nima uchun mos kelishini tushuntir
-5.Bir nechta mahsulot tavsiya qilishing mumkin,lekin 3 tadan oshirma.
+    system_prompt = f"""Sen "Cosmetic Store" internet do'konining AI yordamchisisan.
+Sening vazifang — mijozning tashvishiga (terisi, sochi, muammosi) qarab, FAQAT quyidagi ro'yxatdagi mahsulotlardan mos kelganini tavsiya qilish.
 
-Mahsulotlar ro'yxati:
+MUHIM QOIDA — ANIQLASHTIRISH:
+Agar mijozning so'rovi umumiy yoki noaniq bo'lsa (masalan faqat "terim quruq" deb yozsa, boshqa tafsilot bermasa), DARHOL mahsulot tavsiya qilma. Buning o'rniga 1-2 ta aniqlashtiruvchi savol ber, masalan:
+- Sizga bitta mahsulot kerakmi (masalan faqat krem), yoki to'liq parvarish to'plami (tozalovchi + toner + krem) kerakmi?
+- Terangizda boshqa muammolar ham bormi (masalan aknalar, qizarish, keksarish belgilari)?
+- Byudjetingiz taxminan qancha?
+
+Mijoz javob berganidan keyin, shu ma'lumotlarga asoslanib, ro'yxatdan mos mahsulot(lar)ni tavsiya qil.
+
+Agar mijoz so'rovi allaqachon aniq bo'lsa (masalan "menga faqat toner kerak, terim yog'li" desa), to'g'ridan-to'g'ri tavsiya berishing mumkin, savol berishning hojati yo'q.
+
+BOSHQA QOIDALAR:
+1. Faqat ro'yxatdagi mahsulotlardan tanla, o'zingdan mahsulot o'ylab topma.
+2. Agar ro'yxatda mos mahsulot bo'lmasa, buni ochiq ayt.
+3. Javobni o'zbek tilida, qisqa va samimiy uslubda yoz.
+4. Tavsiya qilganda mahsulot nomini, brendini va narxini ayt, nima uchun mos kelishini tushuntir.
+5. Bir nechta mahsulot tavsiya qilishing mumkin, lekin 3 tadan oshirma.
+6. FORMATLASH: agar javobingda bir nechta ma'lumot bandi bo'lsa (masalan mahsulot nomi, narxi, brendi, yoki buyurtma tafsilotlari), HAR BIR BANDNI ALOHIDA QATORGA yoz. Bir qatorga bir nechta bandni bitta chiziqcha bilan ajratib yozma. Muhim so'zlarni **qalin** qilib belgila
+
+MAHSULOTLAR RO'YXATI:
 {catalog_text}
 """
-    try:
-        client=genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
-        response=client.models.generate_content(
-            model='gemini-3.6-flash',
-            contents=f"{system_prompt}\n\nMijoz savoli: {user_message}"
-        )
-        ai_reply=response.text
-    except Exception as e:
-        error_text=str(e)
-        if 'UNAVAILABLE' in error_text or '503' in error_text:
-            return JsonResponse({'reply':'Hozir AI xizmati band, biroz kutib qayta urinib ko\'ring.🙏'})
-        return JsonResponse({'error':f'AI xizmatida xatolik: {error_text}'},status=500)
 
-    return JsonResponse({'reply':ai_reply})
+    # Suhbat tarixini matn shakliga o'giramiz
+    conversation_text = ""
+    for msg in history:
+        role = "Mijoz" if msg.get('role') == 'user' else "Yordamchi"
+        conversation_text += f"{role}: {msg.get('text', '')}\n"
+
+    full_prompt = f"{system_prompt}\n\nSUHBAT TARIXI:\n{conversation_text}\nMijoz: {user_message}\nYordamchi:"
+
+    try:
+        client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
+        response = client.models.generate_content(
+            model='gemini-3.6-flash',
+            contents=full_prompt
+        )
+        ai_reply = response.text
+    except Exception as e:
+        error_text = str(e)
+        if 'UNAVAILABLE' in error_text or '503' in error_text:
+            return JsonResponse({'reply': 'Hozir AI xizmati band, biroz kutib qayta urinib ko\'ring. 🙏'})
+        if 'RESOURCE_EXHAUSTED' in error_text or '429' in error_text:
+            return JsonResponse(
+                {'reply': 'Bugungi so\'rovlar chegarasiga yetdik, biroz kuting va qayta urinib ko\'ring. 🙏'})
+        return JsonResponse({'error': f'AI xizmatida xatolik: {error_text}'}, status=500)
+    return JsonResponse({'reply': ai_reply})

@@ -1,3 +1,17 @@
+let aiConversationHistory=[];
+
+function formatAiText(text) {
+    const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    const withBold = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    const withBreaks = withBold.replace(/\n/g, '<br>');
+
+    return withBreaks;
+}
+
 function getCsrfToken(){
     return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 }
@@ -74,56 +88,64 @@ function toggleAiChat(){
     box.classList.toggle('open');
 }
 
-function sendAiMessage(){
-    const input=document.getElementById('aiChatInput');
-    const message=input.value.trim();
-    if(!message) return;
+function sendAiMessage() {
+    const input = document.getElementById('aiChatInput');
+    const message = input.value.trim();
+    if (!message) return;
 
-    const messagesDiv=document.getElementById('aiChatMessages');
+    const messagesDiv = document.getElementById('aiChatMessages');
 
-    const userMsg=document.createElement('div');
-    userMsg.className='ai-message ai-message-user';
-    userMsg.textContent=message;
+    const userMsg = document.createElement('div');
+    userMsg.className = 'ai-message ai-message-user';
+    userMsg.textContent = message;
     messagesDiv.appendChild(userMsg);
 
-    input.value='';
-    messagesDiv.scrollTop=messagesDiv.scrollHeight;
+    aiConversationHistory.push({ role: 'user', text: message });
 
-    const loadingMsg=document.createElement('div');
-    loadingMsg.className='ai-message ai-message-bot';
-    loadingMsg.textContent='Yozmoqda...';
-    loadingMsg.id='aiLoadingMsg';
+    input.value = '';
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    const loadingMsg = document.createElement('div');
+    loadingMsg.className = 'ai-message ai-message-bot';
+    loadingMsg.textContent = 'Yozmoqda...';
+    loadingMsg.id = 'aiLoadingMsg';
     messagesDiv.appendChild(loadingMsg);
-    messagesDiv.scrollTop=messagesDiv.scrollHeight;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-    fetch('/ai-assistant/',{
-        method:'POST',
-        headers:{
-            'X-CSRFToken':getCsrfToken(),
-            'Content-Type':'application/json',
+    fetch('/ai-assistant/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'Content-Type': 'application/json',
         },
-        body:JSON.stringify({message:message}),
+        body: JSON.stringify({
+            message: message,
+            history: aiConversationHistory.slice(0, -1)
+        }),
     })
-    .then(response=>response.json())
-    .then(data=>{
-        const loading=document.getElementById('aiLoadingMsg');
+    .then(response => response.json())
+    .then(data => {
+        const loading = document.getElementById('aiLoadingMsg');
         if (loading) loading.remove();
 
-        const botMsg=document.createElement('div');
-        botMsg.className='ai-message ai-message-bot';
-        botMsg.textContent=data.reply || data.error || 'Xatolik yuz berdi.';
-        messagesDiv.appendChild(botMsg);
-        messagesDiv.scrollTop=messagesDiv.scrollHeight;
-        })
+        const replyText = data.reply || data.error || 'Xatolik yuz berdi.';
 
-        .catch(()=>{
-            const loading=document.getElementById('aiLoadingMsg');
-            if (loading) loading.remove();
-            const errorMsg=document.createElement('div');
-            errorMsg.className='ai-message ai-message-bot';
-            errorMsg.textContent='Server bilan bog\'lanishda xatolik';
-            messagesDiv.appendChild(errorMsg);
-        });
+        const botMsg = document.createElement('div');
+        botMsg.className = 'ai-message ai-message-bot';
+        botMsg.innerHTML = formatAiText(replyText);
+        messagesDiv.appendChild(botMsg);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        aiConversationHistory.push({ role: 'assistant', text: replyText });
+    })
+    .catch(() => {
+        const loading = document.getElementById('aiLoadingMsg');
+        if (loading) loading.remove();
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'ai-message ai-message-bot';
+        errorMsg.textContent = 'Server bilan bog\'lanishda xatolik';
+        messagesDiv.appendChild(errorMsg);
+    });
 }
 
 document.addEventListener('DOMContentLoaded',function(){
