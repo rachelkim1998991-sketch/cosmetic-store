@@ -111,7 +111,7 @@ function sendAiMessage(){
 
         const botMsg=document.createElement('div');
         botMsg.className='ai-message ai-message-bot';
-        botMsg.textcontent=data.reply || data.error || 'Xatolik yuz berdi.';
+        botMsg.textContent=data.reply || data.error || 'Xatolik yuz berdi.';
         messagesDiv.appendChild(botMsg);
         messagesDiv.scrollTop=messagesDiv.scrollHeight;
         })
