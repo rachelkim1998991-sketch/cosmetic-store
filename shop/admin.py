@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Brand,Category,Product,Favorite,CartItem,User
+from .models import Brand,Category,Product,Favorite,CartItem,User,Sale
 
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
@@ -14,25 +14,25 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display=('name','brand','category','price','discount_price','stock','expiry_date','is_on_discount')
+    list_display=('name','brand','category','price','cost_price','discount_price','stock','expiry_date','is_on_discount')
     list_filter=('brand','category')
     search_fields=('name','brand__name','skin_concern')
     list_editable=('stock','discount_price')
     ordering=('-created_at',)
 
-    fieldsets=(
-        ('Asosiy ma\'lumot',{
-        'fields':('name','brand','category','description','image')
+    fieldsets = (
+        ('Asosiy ma\'lumot', {
+            'fields': ('name', 'brand', 'category', 'description', 'image')
         }),
-        ('Narx va chegirma',{
-            'fields':('price','discount_price')
+        ('Narx va chegirma', {
+            'fields': ('price', 'cost_price', 'discount_price')
         }),
-        ('Ombor',{
-            'fields':('stock','expiry_date')
+        ('Ombor', {
+            'fields': ('stock', 'expiry_date')
         }),
-        ('AI tavsiyasi uchun',{
-            'fields':('skin_concern',)
-        })
+        ('AI tavsiyasi uchun', {
+            'fields': ('skin_concern',)
+        }),
     )
 
 @admin.register(Favorite)
@@ -50,3 +50,10 @@ class CustomUserAdmin(UserAdmin):
     ('Qo\'shimcha ma\'lumot',{'fields':('phone_number','phone_verified','preferred_language')}),
     )
 
+@admin.register(Sale)
+class SaleAdmin(admin.ModelAdmin):
+    list_display = ('product', 'quantity', 'sold_price', 'sale_date', 'total_revenue', 'total_profit')
+    list_filter = ('sale_date', 'product__brand', 'product__category')
+    search_fields = ('product__name',)
+    date_hierarchy = 'sale_date'
+    ordering = ('-sale_date',)

@@ -15,5 +15,6 @@ urlpatterns=[
     path('favorites/',views.favorites_view,name='favorites'),
     path('ai-assistant/',views.ai_assistant,name='ai_assistant'),
     path('product/<int:product_id>/', views.product_detail, name='product_detail'),
+    path('stock-statistics/', views.stock_statistics, name='stock_statistics'),
 
 ]

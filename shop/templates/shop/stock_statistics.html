@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Tovar statistikasi - Cosmetic Store{% endblock %}
+
+{% block content %}
+
+<section class="stats-page">
+    <div class="container">
+        <h2>Tovar statistikasi</h2>
+
+        <div class="stats-summary">
+            <div class="stat-card">
+                <span class="stat-number">{{ total_products }}</span>
+                <span class="stat-label">Jami mahsulot turi</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ total_stock_value|uz_price }}</span>
+                <span class="stat-label">Umumiy zaxira qiymati (so'm)</span>
+            </div>
+            <div class="stat-card stat-warning">
+                <span class="stat-number">{{ low_stock_count }}</span>
+                <span class="stat-label">Kam qolgan (5 tadan kam)</span>
+            </div>
+            <div class="stat-card stat-danger">
+                <span class="stat-number">{{ out_of_stock_count }}</span>
+                <span class="stat-label">Tugagan mahsulotlar</span>
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <div class="stats-section-header">
+                <h3>Sotuvlar va foyda</h3>
+                <div class="period-filter">
+                    <a href="?period=7" class="{% if period == '7' %}active{% endif %}">7 kun</a>
+                    <a href="?period=30" class="{% if period == '30' %}active{% endif %}">30 kun</a>
+                    <a href="?period=all" class="{% if period == 'all' %}active{% endif %}">Barcha vaqt</a>
+                </div>
+            </div>
+
+            <div class="stats-summary">
+                <div class="stat-card">
+                    <span class="stat-number">{{ total_sold_quantity }}</span>
+                    <span class="stat-label">Sotilgan dona</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{{ total_revenue|uz_price }}</span>
+                    <span class="stat-label">Jami daromad (so'm)</span>
+                </div>
+                <div class="stat-card stat-profit">
+                    <span class="stat-number">{{ total_profit|uz_price }}</span>
+                    <span class="stat-label">Jami foyda (so'm)</span>
+                </div>
+            </div>
+        </div>
+
+        {% if best_sellers %}
+        <div class="stats-section">
+            <h3>🏆 Eng ko'p sotilgan mahsulotlar</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Nomi</th>
+                        <th>Brend</th>
+                        <th>Sotilgan miqdor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in best_sellers %}
+                    <tr>
+                        <td>{{ item.product__name }}</td>
+                        <td>{{ item.product__brand__name }}</td>
+                        <td><strong>{{ item.total_qty }} dona</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if expired_products %}
+        <div class="stats-alert stats-alert-danger">
+            <h3>⛔ Muddati o'tgan mahsulotlar</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Nomi</th>
+                        <th>Brend</th>
+                        <th>Srok godnosti</th>
+                        <th>Qoldiq</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in expired_products %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.brand.name }}</td>
+                        <td class="stock-out">{{ product.expiry_date }}</td>
+                        <td>{{ product.stock }} dona</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if expiring_soon %}
+        <div class="stats-alert">
+            <h3>⏳ Srok godnosti tugashiga oz qolgan (30 kun ichida)</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Nomi</th>
+                        <th>Brend</th>
+                        <th>Srok godnosti</th>
+                        <th>Qoldiq</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in expiring_soon %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.brand.name }}</td>
+                        <td class="stock-low">{{ product.expiry_date }}</td>
+                        <td>{{ product.stock }} dona</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if low_stock_products %}
+        <div class="stats-alert">
+            <h3>⚠️ Kam qolgan mahsulotlar</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Nomi</th>
+                        <th>Brend</th>
+                        <th>Qoldi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in low_stock_products %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.brand.name }}</td>
+                        <td class="stock-low">{{ product.stock }} dona</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <div class="stats-section">
+            <h3>Kategoriya bo'yicha zaxira</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Kategoriya</th>
+                        <th>Mahsulot turi</th>
+                        <th>Jami qoldiq</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in category_stats %}
+                    <tr>
+                        <td>{{ cat.category__name }}</td>
+                        <td>{{ cat.item_count }}</td>
+                        <td>{{ cat.total_stock }} dona</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="stats-section">
+            <h3>Barcha mahsulotlar (qoldiq bo'yicha)</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Nomi</th>
+                        <th>Brend</th>
+                        <th>Kategoriya</th>
+                        <th>Narxi</th>
+                        <th>Qoldiq</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.brand.name }}</td>
+                        <td>{{ product.category.name }}</td>
+                        <td>{{ product.final_price|uz_price }} so'm</td>
+                        <td class="{% if product.stock <= 5 %}stock-low{% elif product.stock == 0 %}stock-out{% endif %}">
+                            {{ product.stock }} dona
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

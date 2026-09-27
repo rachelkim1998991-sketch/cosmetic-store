@@ -20,7 +20,8 @@ class Product(models.Model):
     brand=models.ForeignKey(Brand,on_delete=models.CASCADE,related_name='products')
     category=models.ForeignKey(Category,on_delete=models.CASCADE,related_name='products')
     description=models.TextField(blank=True)
-    price=models.DecimalField(max_digits=10,decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Tannarx")
     discount_price=models.DecimalField(max_digits=10,decimal_places=2,blank=True,null=True)
 
     stock=models.PositiveIntegerField(default=0)
@@ -71,6 +72,23 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.phone_number or self.username
-    
+
+class Sale(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='sales')
+    quantity = models.PositiveIntegerField(default=1, verbose_name="Miqdor")
+    sold_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Sotilgan narx")
+    sale_date = models.DateField(verbose_name="Sotuv sanasi")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.product.name} - {self.quantity} dona ({self.sale_date})"
+
+    @property
+    def total_revenue(self):
+        return self.sold_price * self.quantity
+
+    @property
+    def total_profit(self):
+        return (self.sold_price - self.product.cost_price) * self.quantity
 
 

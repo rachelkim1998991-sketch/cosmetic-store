@@ -632,3 +632,124 @@ a{
         max-width: 100%;
     }
 }
+
+
+.stats-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.period-filter {
+    display: flex;
+    gap: 8px;
+}
+
+.period-filter a {
+    padding: 6px 14px;
+    border-radius: 20px;
+    background-color: var(--accent-color);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.period-filter a.active {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.stat-card.stat-profit .stat-number {
+    color: #27ae60;
+}
+
+.stats-alert-danger {
+    background-color: #fdecec;
+    border-color: #f5b7b1;
+}
+
+/* ===== Stock statistics ===== */
+.stats-page {
+    padding: 40px 0;
+}
+
+.stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background-color: var(--white);
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.stat-number {
+    display: block;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.stat-label {
+    font-size: 13px;
+    color: var(--text-light);
+}
+
+.stat-card.stat-warning .stat-number {
+    color: #e67e22;
+}
+
+.stat-card.stat-danger .stat-number {
+    color: #e74c3c;
+}
+
+.stats-alert {
+    background-color: #fff5f0;
+    border: 1px solid #ffd8c2;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.stats-section {
+    background-color: var(--white);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    overflow-x: auto;
+}
+
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stats-table th, .stats-table td {
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.stats-table th {
+    color: var(--text-light);
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.stock-low {
+    color: #e67e22;
+    font-weight: 600;
+}
+
+.stock-out {
+    color: #e74c3c;
+    font-weight: 700;
+}

@@ -3,12 +3,14 @@ import json
 from google import genai
 
 from django.shortcuts import render
-from django.db.models import Q
-from .models import Product,Category,Brand,Favorite,CartItem
+from django.db.models import Q, Sum, Count
+from .models import Product, Category, Brand, Favorite, CartItem, Sale
+from datetime import timedelta
+from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-
 
 def home(request):
     products=Product.objects.all()[:12]
@@ -219,3 +221,71 @@ def product_detail(request, product_id):
         'user_favorite_ids': user_favorite_ids,
     }
     return render(request, 'shop/product_detail.html', context)
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def stock_statistics(request):
+    products = Product.objects.select_related('brand', 'category').order_by('stock')
+
+    total_products = products.count()
+    total_stock_value = sum(p.final_price * p.stock for p in products)
+    low_stock_products = products.filter(stock__lte=5)
+    out_of_stock_products = products.filter(stock=0)
+
+    category_stats = (
+        Product.objects.values('category__name')
+        .annotate(total_stock=Sum('stock'), item_count=Count('id'))
+        .order_by('-total_stock')
+    )
+
+    period = request.GET.get('period', '30')
+    today = timezone.now().date()
+
+    if period == '7':
+        start_date = today - timedelta(days=7)
+    elif period == '30':
+        start_date = today - timedelta(days=30)
+    elif period == 'all':
+        start_date = None
+    else:
+        start_date = today - timedelta(days=30)
+
+    sales_qs = Sale.objects.select_related('product', 'product__brand')
+    if start_date:
+        sales_qs = sales_qs.filter(sale_date__gte=start_date)
+
+    total_revenue = sum(s.total_revenue for s in sales_qs)
+    total_profit = sum(s.total_profit for s in sales_qs)
+    total_sold_quantity = sum(s.quantity for s in sales_qs)
+
+    best_sellers = (
+        sales_qs.values('product__id', 'product__name', 'product__brand__name')
+        .annotate(total_qty=Sum('quantity'), total_rev=Sum('sold_price'))
+        .order_by('-total_qty')[:10]
+    )
+
+    expiry_soon_date = today + timedelta(days=30)
+    expiring_soon = products.filter(
+        expiry_date__lte=expiry_soon_date,
+        expiry_date__gte=today
+    ).order_by('expiry_date')
+
+    expired_products = products.filter(expiry_date__lt=today)
+
+    context = {
+        'products': products,
+        'total_products': total_products,
+        'total_stock_value': total_stock_value,
+        'low_stock_products': low_stock_products,
+        'low_stock_count': low_stock_products.count(),
+        'out_of_stock_count': out_of_stock_products.count(),
+        'category_stats': category_stats,
+        'period': period,
+        'total_revenue': total_revenue,
+        'total_profit': total_profit,
+        'total_sold_quantity': total_sold_quantity,
+        'best_sellers': best_sellers,
+        'expiring_soon': expiring_soon,
+        'expired_products': expired_products,
+    }
+    return render(request, 'shop/stock_statistics.html', context)
