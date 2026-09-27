@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 class Brand(models.Model):
     name=models.CharField(max_length=100,unique=True)
@@ -118,6 +119,33 @@ class Order(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     paid_at = models.DateTimeField(blank=True, null=True)
+    stock_deducted = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        old_status = None
+        if self.pk:
+            old_status = Order.objects.filter(pk=self.pk).values_list('status', flat=True).first()
+
+        super().save(*args, **kwargs)
+
+        if self.status == 'paid' and old_status != 'paid' and not self.stock_deducted and self.product:
+            unit_price = self.total_amount / self.quantity if self.quantity else self.product.final_price
+
+            Sale.objects.create(
+                product=self.product,
+                quantity=self.quantity,
+                sold_price=unit_price,
+                sale_date=timezone.now().date(),
+            )
+
+            self.product.stock = max(0, self.product.stock - self.quantity)
+            self.product.save()
+
+            if not self.paid_at:
+                self.paid_at = timezone.now()
+
+            self.stock_deducted = True
+            Order.objects.filter(pk=self.pk).update(stock_deducted=True, paid_at=self.paid_at)
 
     def __str__(self):
         return f"Buyurtma #{self.id} - {self.user} - {self.total_amount} so'm ({self.get_status_display()})"
