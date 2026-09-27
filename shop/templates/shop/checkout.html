@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Buyurtma berish - Cosmetic Store{% endblock %}
+
+{% block content %}
+
+<section class="checkout-page">
+    <div class="container checkout-container">
+        <h2>Buyurtma berish</h2>
+
+        <div class="checkout-product">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+                <div class="product-img-placeholder"></div>
+            {% endif %}
+            <div>
+                <h3>{{ product.name }}</h3>
+                <p class="product-brand">{{ product.brand.name }}</p>
+                <p class="new-price">{{ product.final_price|uz_price }} so'm</p>
+            </div>
+        </div>
+
+        <form method="post" class="checkout-form">
+            {% csrf_token %}
+
+            <label for="quantity">Miqdor:</label>
+            <input type="number" name="quantity" id="quantity" value="1" min="1" max="{{ product.stock }}" onchange="updateCheckoutTotal()">
+
+            <p class="checkout-total-line">Jami: <span id="checkoutTotal">{{ product.final_price|uz_price }}</span> so'm</p>
+
+            <h3>To'lov usulini tanlang</h3>
+            <div class="payment-methods">
+                <label class="payment-option">
+                    <input type="radio" name="payment_method" value="click" required>
+                    <span>Click</span>
+                </label>
+                <label class="payment-option">
+                    <input type="radio" name="payment_method" value="payme" required>
+                    <span>Payme</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn-checkout-submit">To'lovga o'tish</button>
+        </form>
+    </div>
+</section>
+
+<script>
+    const unitPrice = {{ product.final_price }};
+
+    function updateCheckoutTotal() {
+        const qty = parseInt(document.getElementById('quantity').value) || 1;
+        const total = unitPrice * qty;
+        document.getElementById('checkoutTotal').textContent = total.toLocaleString('uz-UZ').replace(/,/g, '.');
+    }
+</script>
+
+{% endblock %}

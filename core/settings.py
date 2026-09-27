@@ -42,6 +42,13 @@ INSTALLED_APPS = [
 
 AUTH_USER_MODEL='shop.User'
 
+CLICK_MERCHANT_ID = os.getenv('CLICK_MERCHANT_ID', '')
+CLICK_SERVICE_ID = os.getenv('CLICK_SERVICE_ID', '')
+CLICK_SECRET_KEY = os.getenv('CLICK_SECRET_KEY', '')
+
+PAYME_MERCHANT_ID = os.getenv('PAYME_MERCHANT_ID', '')
+PAYME_SECRET_KEY = os.getenv('PAYME_SECRET_KEY', '')
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

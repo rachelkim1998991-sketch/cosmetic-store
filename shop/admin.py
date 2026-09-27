@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Brand,Category,Product,Favorite,CartItem,User,Sale
+from .models import Brand,Category,Product,Favorite,CartItem,User,Sale,Order
 
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
@@ -57,3 +57,13 @@ class SaleAdmin(admin.ModelAdmin):
     search_fields = ('product__name',)
     date_hierarchy = 'sale_date'
     ordering = ('-sale_date',)
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'product', 'quantity', 'total_amount', 'payment_method', 'status', 'created_at')
+    list_filter = ('status', 'payment_method', 'created_at')
+    search_fields = ('user__username', 'transaction_id', 'provider_transaction_id')
+    readonly_fields = ('transaction_id', 'provider_transaction_id', 'created_at', 'paid_at')
+    ordering = ('-created_at',)
+
+

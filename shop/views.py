@@ -2,15 +2,22 @@ import os
 import json
 from google import genai
 
-from django.shortcuts import render
+from django.shortcuts import render,redirect,get_object_or_404
 from django.db.models import Q, Sum, Count
-from .models import Product, Category, Brand, Favorite, CartItem, Sale
+from .models import Product, Category, Brand, Favorite, CartItem, Sale,Order
 from datetime import timedelta
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
-from django.http import JsonResponse
+from django.http import JsonResponse,HttpResponse
 from django.views.decorators.http import require_POST
+from django.conf import settings
+from decimal import Decimal
+from django.views.decorators.csrf import csrf_exempt
+import hashlib
+import time
+import base64
+import json as json_lib
 
 def home(request):
     products=Product.objects.all()[:12]
@@ -174,7 +181,7 @@ BOSHQA QOIDALAR:
 2. Agar ro'yxatda mos mahsulot bo'lmasa, buni ochiq ayt.
 3. Javobni o'zbek tilida, qisqa va samimiy uslubda yoz.
 4. Tavsiya qilganda mahsulot nomini, brendini va narxini ayt, nima uchun mos kelishini tushuntir.
-5. Bir nechta mahsulot tavsiya qilishing mumkin, lekin 3 tadan oshirma.
+5. Bir nechta mahsulot tavsiya qilishing mumkin.
 6. FORMATLASH: agar javobingda bir nechta ma'lumot bandi bo'lsa (masalan mahsulot nomi, narxi, brendi, yoki buyurtma tafsilotlari), HAR BIR BANDNI ALOHIDA QATORGA yoz. Bir qatorga bir nechta bandni bitta chiziqcha bilan ajratib yozma. Muhim so'zlarni **qalin** qilib belgila
 
 MAHSULOTLAR RO'YXATI:
@@ -289,3 +296,234 @@ def stock_statistics(request):
         'expired_products': expired_products,
     }
     return render(request, 'shop/stock_statistics.html', context)
+
+
+@login_required
+def checkout(request, product_id):
+    product = Product.objects.get(id=product_id)
+
+    if request.method == 'POST':
+        payment_method = request.POST.get('payment_method')
+        quantity = int(request.POST.get('quantity', 1))
+        total_amount = product.final_price * quantity
+
+        order = Order.objects.create(
+            user=request.user,
+            product=product,
+            quantity=quantity,
+            total_amount=total_amount,
+            payment_method=payment_method,
+            status='pending',
+        )
+        order.transaction_id = f"order-{order.id}-{int(time.time())}"
+        order.save()
+
+        if payment_method == 'click':
+            return redirect('shop:click_pay', order_id=order.id)
+        elif payment_method == 'payme':
+            return redirect('shop:payme_pay', order_id=order.id)
+
+    context = {'product': product}
+    return render(request, 'shop/checkout.html', context)
+
+
+@login_required
+def click_pay(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+
+    return_url = request.build_absolute_uri('/checkout/success/')
+    click_url = (
+        f"https://my.click.uz/services/pay"
+        f"?service_id={settings.CLICK_SERVICE_ID}"
+        f"&merchant_id={settings.CLICK_MERCHANT_ID}"
+        f"&amount={order.total_amount}"
+        f"&transaction_param={order.transaction_id}"
+        f"&return_url={return_url}"
+    )
+    return redirect(click_url)
+
+
+@csrf_exempt
+def click_callback(request):
+    data = request.POST
+
+    click_trans_id = data.get('click_trans_id')
+    service_id = data.get('service_id')
+    merchant_trans_id = data.get('merchant_trans_id')
+    amount = data.get('amount')
+    action = data.get('action')
+    sign_time = data.get('sign_time')
+    sign_string = data.get('sign_string')
+    error = data.get('error')
+
+    try:
+        order = Order.objects.get(transaction_id=merchant_trans_id, payment_method='click')
+    except Order.DoesNotExist:
+        return JsonResponse({'error': -5, 'error_note': 'Buyurtma topilmadi'})
+
+    if action == '0':  # Prepare
+        expected_sign = hashlib.md5(
+            f"{click_trans_id}{service_id}{settings.CLICK_SECRET_KEY}{merchant_trans_id}{amount}{action}{sign_time}".encode()
+        ).hexdigest()
+
+        if sign_string != expected_sign:
+            return JsonResponse({'error': -1, 'error_note': 'Imzo mos emas'})
+
+        return JsonResponse({
+            'click_trans_id': click_trans_id,
+            'merchant_trans_id': merchant_trans_id,
+            'merchant_prepare_id': order.id,
+            'error': 0,
+            'error_note': 'Success',
+        })
+
+    elif action == '1':  # Complete
+        merchant_prepare_id = data.get('merchant_prepare_id')
+        expected_sign = hashlib.md5(
+            f"{click_trans_id}{service_id}{settings.CLICK_SECRET_KEY}{merchant_trans_id}{merchant_prepare_id}{amount}{action}{sign_time}".encode()
+        ).hexdigest()
+
+        if sign_string != expected_sign:
+            return JsonResponse({'error': -1, 'error_note': 'Imzo mos emas'})
+
+        if error and int(error) < 0:
+            order.status = 'failed'
+        else:
+            order.status = 'paid'
+            order.provider_transaction_id = click_trans_id
+            order.paid_at = timezone.now()
+        order.save()
+
+        return JsonResponse({
+            'click_trans_id': click_trans_id,
+            'merchant_trans_id': merchant_trans_id,
+            'merchant_confirm_id': order.id,
+            'error': 0,
+            'error_note': 'Success',
+        })
+
+    return JsonResponse({'error': -3, 'error_note': 'Noma\'lum amal'})
+
+
+
+@login_required
+def payme_pay(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+
+    amount_tiyin = int(order.total_amount * 100)  # Payme summani tiyinda kutadi
+    params = f"m={settings.PAYME_MERCHANT_ID};ac.order_id={order.id};a={amount_tiyin}"
+    encoded_params = base64.b64encode(params.encode()).decode()
+
+    payme_url = f"https://checkout.paycom.uz/{encoded_params}"
+    return redirect(payme_url)
+
+
+@csrf_exempt
+def payme_callback(request):
+    try:
+        body = json_lib.loads(request.body)
+    except (json_lib.JSONDecodeError, AttributeError):
+        return JsonResponse({'error': {'code': -32700, 'message': 'Parse error'}})
+
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    expected_auth = 'Basic ' + base64.b64encode(f"Paycom:{settings.PAYME_SECRET_KEY}".encode()).decode()
+
+    if auth_header != expected_auth:
+        return JsonResponse({'error': {'code': -32504, 'message': 'Ruxsat yo\'q'}})
+
+    method = body.get('method')
+    params = body.get('params', {})
+    request_id = body.get('id')
+
+    if method == 'CheckPerformTransaction':
+        order_id = params.get('account', {}).get('order_id')
+        try:
+            order = Order.objects.get(id=order_id, payment_method='payme')
+        except Order.DoesNotExist:
+            return JsonResponse({'error': {'code': -31050, 'message': 'Buyurtma topilmadi'}, 'id': request_id})
+
+        return JsonResponse({'result': {'allow': True}, 'id': request_id})
+
+    elif method == 'CreateTransaction':
+        order_id = params.get('account', {}).get('order_id')
+        trans_id = params.get('id')
+        try:
+            order = Order.objects.get(id=order_id, payment_method='payme')
+        except Order.DoesNotExist:
+            return JsonResponse({'error': {'code': -31050, 'message': 'Buyurtma topilmadi'}, 'id': request_id})
+
+        order.provider_transaction_id = trans_id
+        order.save()
+
+        return JsonResponse({
+            'result': {
+                'create_time': int(time.time() * 1000),
+                'transaction': str(order.id),
+                'state': 1,
+            },
+            'id': request_id,
+        })
+
+    elif method == 'PerformTransaction':
+        trans_id = params.get('id')
+        try:
+            order = Order.objects.get(provider_transaction_id=trans_id)
+        except Order.DoesNotExist:
+            return JsonResponse({'error': {'code': -31003, 'message': 'Tranzaksiya topilmadi'}, 'id': request_id})
+
+        order.status = 'paid'
+        order.paid_at = timezone.now()
+        order.save()
+
+        return JsonResponse({
+            'result': {
+                'transaction': str(order.id),
+                'perform_time': int(time.time() * 1000),
+                'state': 2,
+            },
+            'id': request_id,
+        })
+
+    elif method == 'CancelTransaction':
+        trans_id = params.get('id')
+        try:
+            order = Order.objects.get(provider_transaction_id=trans_id)
+        except Order.DoesNotExist:
+            return JsonResponse({'error': {'code': -31003, 'message': 'Tranzaksiya topilmadi'}, 'id': request_id})
+
+        order.status = 'cancelled'
+        order.save()
+
+        return JsonResponse({
+            'result': {
+                'transaction': str(order.id),
+                'cancel_time': int(time.time() * 1000),
+                'state': -1,
+            },
+            'id': request_id,
+        })
+
+    elif method == 'CheckTransaction':
+        trans_id = params.get('id')
+        try:
+            order = Order.objects.get(provider_transaction_id=trans_id)
+        except Order.DoesNotExist:
+            return JsonResponse({'error': {'code': -31003, 'message': 'Tranzaksiya topilmadi'}, 'id': request_id})
+
+        state_map = {'pending': 1, 'paid': 2, 'cancelled': -1, 'failed': -2}
+        return JsonResponse({
+            'result': {
+                'create_time': int(order.created_at.timestamp() * 1000),
+                'perform_time': int(order.paid_at.timestamp() * 1000) if order.paid_at else 0,
+                'cancel_time': 0,
+                'transaction': str(order.id),
+                'state': state_map.get(order.status, 1),
+            },
+            'id': request_id,
+        })
+
+    return JsonResponse({'error': {'code': -32601, 'message': 'Metod topilmadi'}, 'id': request_id})
+
+@login_required
+def checkout_success(request):
+    return render(request, 'shop/checkout_success.html')

@@ -27,14 +27,16 @@
                     <p class="new-price">{{ item.product.final_price|uz_price }}</p>
                 </div>
 
-                <button class="btn-remove" onclick="removeFromCart({{ item.id }})">O'chirish</button>
+                <div class="cart-item-actions">
+                    <a href="{% url 'shop:checkout' item.product.id %}" class="btn-buy-now">Sotib olish</a>
+                    <button class="btn-remove" onclick="removeFromCart({{ item.id }})">O'chirish</button>
+                </div>
             </div>
             {% endfor %}
         </div>
 
         <div class="cart-total">
-            <h3>Jami: {{ total }} so'm</h3>
-            <a href="#" class="btn-checkout">Buyurtma berish</a>
+            <h3>Jami: {{ total|uz_price }} so'm</h3>
         </div>
 
         {% else %}

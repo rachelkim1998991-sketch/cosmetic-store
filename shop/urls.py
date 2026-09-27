@@ -16,5 +16,11 @@ urlpatterns=[
     path('ai-assistant/',views.ai_assistant,name='ai_assistant'),
     path('product/<int:product_id>/', views.product_detail, name='product_detail'),
     path('stock-statistics/', views.stock_statistics, name='stock_statistics'),
+    path('checkout/<int:product_id>/', views.checkout, name='checkout'),
+    path('checkout/click-pay/<int:order_id>/', views.click_pay, name='click_pay'),
+    path('checkout/payme-pay/<int:order_id>/', views.payme_pay, name='payme_pay'),
+    path('payments/click/callback/', views.click_callback, name='click_callback'),
+    path('payments/payme/callback/', views.payme_callback, name='payme_callback'),
+    path('checkout/success/', views.checkout_success, name='checkout_success'),
 
 ]

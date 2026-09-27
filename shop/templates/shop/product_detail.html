@@ -44,6 +44,7 @@
             <div class="product-detail-actions">
                 <button class="favorite-btn {% if product.id in user_favorite_ids %}active{% endif %}" onclick="toggleFavorite({{ product.id }}, this)">♥</button>
                 <button class="btn-add-cart" onclick="addToCart({{ product.id }}, this)">Savatga qo'shish</button>
+                <a href="{% url 'shop:checkout' product.id %}" class="btn-checkout-submit" style="text-decoration:none; display:inline-block; text-align:center;">Sotib olish</a>
             </div>
         </div>
 

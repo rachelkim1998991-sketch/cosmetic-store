@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}To'lov muvaffaqiyatli - Cosmetic Store{% endblock %}
+
+{% block content %}
+
+<section class="success-page">
+    <div class="container">
+        <div class="success-box">
+            <div class="success-icon">✓</div>
+            <h2>Buyurtmangiz qabul qilindi!</h2>
+            <p>To'lov holatini tez orada tasdiqlaymiz. Savollaringiz bo'lsa, biz bilan bog'laning.</p>
+            <a href="{% url 'shop:home' %}" class="btn-checkout-submit">Bosh sahifaga qaytish</a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
