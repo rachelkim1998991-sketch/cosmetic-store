@@ -22,5 +22,6 @@ urlpatterns=[
     path('payments/click/callback/', views.click_callback, name='click_callback'),
     path('payments/payme/callback/', views.payme_callback, name='payme_callback'),
     path('checkout/success/', views.checkout_success, name='checkout_success'),
+    path('search-suggestions/', views.search_suggestions, name='search_suggestions'),
 
 ]

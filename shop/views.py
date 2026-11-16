@@ -4,8 +4,8 @@ from google import genai
 
 from django.shortcuts import render,redirect,get_object_or_404
 from django.db.models import Q, Sum, Count
-from .models import Product, Category, Brand, Favorite, CartItem, Sale,Order
-from datetime import timedelta
+from .models import Product, Category, Brand, Favorite, CartItem, Sale, Banner, Order, OrderItem
+6from datetime import timedelta
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
@@ -22,6 +22,7 @@ import json as json_lib
 def home(request):
     products=Product.objects.all()[:12]
     categories=Category.objects.all()
+    banners = Banner.objects.filter(is_active=True)
 
     user_favorite_ids=[]
     if request.user.is_authenticated:
@@ -32,6 +33,7 @@ def home(request):
         'products':products,
         'categories':categories,
         'user_favorite_ids':user_favorite_ids,
+        'banners': banners,
     }
     return render(request,'shop/home.html',context)
 
@@ -216,6 +218,7 @@ MAHSULOTLAR RO'YXATI:
 
 def product_detail(request, product_id):
     product = Product.objects.select_related('brand', 'category').get(id=product_id)
+    gallery_images = product.gallery.all()
 
     user_favorite_ids = []
     if request.user.is_authenticated:
@@ -225,6 +228,7 @@ def product_detail(request, product_id):
 
     context = {
         'product': product,
+        'gallery_images': gallery_images,
         'user_favorite_ids': user_favorite_ids,
     }
     return render(request, 'shop/product_detail.html', context)
@@ -527,3 +531,28 @@ def payme_callback(request):
 @login_required
 def checkout_success(request):
     return render(request, 'shop/checkout_success.html')
+
+def search_suggestions(request):
+    query = request.GET.get('q', '').strip()
+
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+
+    products = Product.objects.filter(
+        Q(name__icontains=query) |
+        Q(brand__name__icontains=query) |
+        Q(category__name__icontains=query)
+    ).select_related('brand')[:6]
+
+    results = []
+    for p in products:
+        results.append({
+            'id': p.id,
+            'name': p.name,
+            'brand': p.brand.name,
+            'price': str(p.final_price),
+            'image': p.image.url if p.image else '',
+            'url': f'/product/{p.id}/',
+        })
+
+    return JsonResponse({'results': results})

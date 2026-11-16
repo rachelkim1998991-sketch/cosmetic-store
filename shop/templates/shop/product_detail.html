@@ -9,11 +9,28 @@
 <section class="product-detail-page">
     <div class="container product-detail-layout">
 
-        <div class="product-detail-image">
-            {% if product.image %}
-                <img src="{{ product.image.url }}" alt="{{ product.name }}">
-            {% else %}
-                <div class="product-img-placeholder"></div>
+        <div class="product-gallery">
+            <div class="gallery-main">
+                <button class="gallery-nav gallery-prev" onclick="scrollThumbnails(-1)">‹</button>
+
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" id="mainProductImage">
+                {% else %}
+                    <div class="product-img-placeholder" id="mainProductImage"></div>
+                {% endif %}
+
+                <button class="gallery-nav gallery-next" onclick="scrollThumbnails(1)">›</button>
+            </div>
+
+            {% if gallery_images %}
+            <div class="product-thumbnails-vertical" id="thumbnailStrip">
+                {% if product.image %}
+                <img src="{{ product.image.url }}" class="thumbnail active" onclick="changeMainImage(this, '{{ product.image.url }}')">
+                {% endif %}
+                {% for img in gallery_images %}
+                <img src="{{ img.image.url }}" class="thumbnail" onclick="changeMainImage(this, '{{ img.image.url }}')">
+                {% endfor %}
+            </div>
             {% endif %}
         </div>
 

@@ -48,6 +48,18 @@ class Product(models.Model):
     def final_price(self):
         return self.discount_price if self.is_on_discount else self.price
 
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='gallery')
+    image = models.ImageField(upload_to='products/gallery/')
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.product.name} - rasm {self.order}"
+
 class Favorite(models.Model):
     user=models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     product=models.ForeignKey(Product,on_delete=models.CASCADE)
@@ -106,10 +118,21 @@ class Order(models.Model):
         ('payme', 'Payme'),
     ]
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
-    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
-    quantity = models.PositiveIntegerField(default=1)
-    total_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Jami summa (so'm)")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders', null=True,
+                             blank=True)
+    telegram_user_id = models.CharField(max_length=50, blank=True, null=True)
+    telegram_username = models.CharField(max_length=100, blank=True, null=True)
+    customer_name = models.CharField(max_length=150, blank=True, null=True)
+    customer_phone = models.CharField(max_length=30, blank=True, null=True)
+
+    discount_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0, blank=True,
+        verbose_name="Chegirma (so'm)"
+    )
+    total_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0,
+        verbose_name="Jami summa (so'm)", editable=False
+    )
 
     payment_method = models.CharField(max_length=10, choices=PAYMENT_CHOICES)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
@@ -122,32 +145,71 @@ class Order(models.Model):
     stock_deducted = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
-        old_status = None
-        if self.pk:
-            old_status = Order.objects.filter(pk=self.pk).values_list('status', flat=True).first()
-
         super().save(*args, **kwargs)
 
-        if self.status == 'paid' and old_status != 'paid' and not self.stock_deducted and self.product:
-            unit_price = self.total_amount / self.quantity if self.quantity else self.product.final_price
+    def recalculate_total(self):
+        subtotal = sum(item.subtotal for item in self.items.all())
+        discount = self.discount_amount or 0
+        total = subtotal - discount
+        if total < 0:
+            total = 0
+        self.total_amount = total
+        Order.objects.filter(pk=self.pk).update(total_amount=total)
 
+    def finalize_payment(self):
+        """Status 'paid' bo'lganda, har bir mahsulot uchun Sale yaratadi va stockni kamaytiradi."""
+        if self.status != 'paid' or self.stock_deducted:
+            return
+
+        for item in self.items.select_related('product').all():
+            if not item.product:
+                continue
             Sale.objects.create(
-                product=self.product,
-                quantity=self.quantity,
-                sold_price=unit_price,
+                product=item.product,
+                quantity=item.quantity,
+                sold_price=item.unit_price,
                 sale_date=timezone.now().date(),
             )
+            item.product.stock = max(0, item.product.stock - item.quantity)
+            item.product.save()
 
-            self.product.stock = max(0, self.product.stock - self.quantity)
-            self.product.save()
-
-            if not self.paid_at:
-                self.paid_at = timezone.now()
-
-            self.stock_deducted = True
-            Order.objects.filter(pk=self.pk).update(stock_deducted=True, paid_at=self.paid_at)
+        self.stock_deducted = True
+        self.paid_at = self.paid_at or timezone.now()
+        Order.objects.filter(pk=self.pk).update(stock_deducted=True, paid_at=self.paid_at)
 
     def __str__(self):
         return f"Buyurtma #{self.id} - {self.user} - {self.total_amount} so'm ({self.get_status_display()})"
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
+    quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Birlik narxi")
+
+    def save(self, *args, **kwargs):
+        if not self.unit_price and self.product:
+            self.unit_price = self.product.final_price
+        super().save(*args, **kwargs)
+
+    @property
+    def subtotal(self):
+        return (self.unit_price or 0) * self.quantity
+
+    def __str__(self):
+        return f"{self.product} x {self.quantity}"
+
+
+class Banner(models.Model):
+    title = models.CharField(max_length=200, blank=True)
+    image = models.ImageField(upload_to='banners/')
+    link_product = models.ForeignKey(Product, on_delete=models.SET_NULL, blank=True, null=True)
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return self.title or f"Banner {self.id}"
 
 

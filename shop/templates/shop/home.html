@@ -6,12 +6,30 @@
 
 {% block content %}
 
+{% if banners %}
+<section class="banner-carousel">
+    <div class="banner-track" id="bannerTrack">
+        {% for banner in banners %}
+        <div class="banner-slide">
+            <a href="{% if banner.link_product %}{% url 'shop:product_detail' banner.link_product.id %}{% else %}#{% endif %}">
+                <img src="{{ banner.image.url }}" alt="{{ banner.title }}">
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% if banners|length > 1 %}
+    <button class="banner-nav banner-prev" onclick="changeBanner(-1)">‹</button>
+    <button class="banner-nav banner-next" onclick="changeBanner(1)">›</button>
+    {% endif %}
+</section>
+{% else %}
 <section class="hero">
     <div class="container">
         <h1>Go'zallik siz uchun</h1>
         <p>Eng sifatli kosmetika mahsulotlari bir joyda</p>
     </div>
 </section>
+{% endif %}
 
 <section class="categories-section">
     <div class="container">

@@ -602,6 +602,14 @@ a{
     text-align: left;
 }
 
+.product-img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 8px;
+}
+
 .product-stock {
     color: var(--text-light);
     font-size: 14px;
@@ -897,4 +905,216 @@ a{
 
 .btn-buy-now:hover {
     background-color: var(--primary-dark);
+}
+
+.banner-carousel {
+    position: relative;
+    overflow: hidden;
+    max-height: 420px;
+    background-color: var(--accent-color);
+}
+
+.banner-track {
+    display: flex;
+    transition: transform 0.4s ease;
+}
+
+.banner-slide {
+    min-width: 100%;
+    height: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--accent-color);
+}
+
+.banner-slide img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.banner-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(255,255,255,0.8);
+    border: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.banner-prev { left: 15px; }
+.banner-next { right: 15px; }
+
+@media (max-width: 768px) {
+    .banner-carousel, .banner-slide {
+        height: 220px;
+        max-height: 220px;
+    }
+}
+
+.product-gallery {
+    display: flex;
+    gap: 15px;
+    flex-direction: row-reverse;
+    align-items: flex-start;
+}
+
+.gallery-main {
+    position: relative;
+    flex: 0 0 380px;
+    width: 380px;
+    height: 420px;
+    border-radius: 16px;
+    overflow: hidden;
+    background-color: var(--accent-color);
+}
+
+.gallery-main img, .gallery-main .product-img-placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+
+.gallery-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(255,255,255,0.9);
+    border: 1px solid var(--border-color);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.gallery-prev { left: 10px; }
+.gallery-next { right: 10px; }
+
+.product-thumbnails-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 2px;
+}
+
+.thumbnail {
+    width: 65px;
+    height: 65px;
+    object-fit: cover;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    opacity: 0.7;
+    transition: border-color 0.2s, opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.thumbnail:hover {
+    opacity: 1;
+}
+
+.thumbnail.active {
+    border-color: var(--primary-color);
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .product-gallery {
+        flex-direction: column;
+    }
+    .product-thumbnails-vertical {
+        flex-direction: row;
+        max-height: none;
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
+    }
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-suggestions {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 320px;
+    background-color: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 200;
+}
+
+.search-suggestions.active {
+    display: block;
+}
+
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-color);
+    color: inherit;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background-color: var(--accent-color);
+}
+
+.suggestion-item img, .suggestion-img-placeholder {
+    width: 42px;
+    height: 42px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+    background-color: var(--accent-color);
+}
+
+.suggestion-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.suggestion-name {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.suggestion-brand {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.suggestion-empty {
+    padding: 15px;
+    text-align: center;
+    color: var(--text-light);
+    font-size: 14px;
 }

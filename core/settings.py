@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-
 load_dotenv()
 
 from pathlib import Path
@@ -14,10 +13,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$@-j2vf66cuc$^%u%tr=1w(slg@_h0)krrstcm2p$4#d0snopu'
+
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+
 
 ALLOWED_HOSTS = ['ruziyeva.pythonanywhere.com', '127.0.0.1', 'localhost']
 
@@ -130,6 +131,9 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
+
+USE_L10N = True
+DATE_INPUT_FORMATS = ['%Y-%m-%d', '%d.%m.%Y', '%d/%m/%Y']
 
 USE_TZ = True
 

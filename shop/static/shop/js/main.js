@@ -158,3 +158,150 @@ document.addEventListener('DOMContentLoaded',function(){
         });
     }
 });
+
+let currentBanner = 0;
+let bannerAutoTimer = null;
+
+function changeBanner(direction) {
+    const track = document.getElementById('bannerTrack');
+    if (!track) return;
+    const slides = track.children.length;
+    currentBanner = (currentBanner + direction + slides) % slides;
+    track.style.transform = `translateX(-${currentBanner * 100}%)`;
+
+    resetBannerAutoPlay();
+}
+
+function startBannerAutoPlay() {
+    const track = document.getElementById('bannerTrack');
+    if (!track || track.children.length <= 1) return;
+
+    bannerAutoTimer = setInterval(() => {
+        changeBannerAuto();
+    }, 5000);
+}
+
+function changeBannerAuto() {
+    const track = document.getElementById('bannerTrack');
+    if (!track) return;
+    const slides = track.children.length;
+    currentBanner = (currentBanner + 1) % slides;
+    track.style.transform = `translateX(-${currentBanner * 100}%)`;
+}
+
+function resetBannerAutoPlay() {
+    if (bannerAutoTimer) {
+        clearInterval(bannerAutoTimer);
+    }
+    startBannerAutoPlay();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('bannerTrack')) {
+        startBannerAutoPlay();
+    }
+});
+
+let galleryImages = [];
+let currentImageIndex = 0;
+
+function initGallery() {
+    const thumbs = document.querySelectorAll('.thumbnail');
+    galleryImages = Array.from(thumbs).map(t => t.src);
+    currentImageIndex = 0;
+}
+
+function changeMainImage(thumbEl, imageUrl) {
+    const mainImg = document.getElementById('mainProductImage');
+    if (mainImg && mainImg.tagName === 'IMG') {
+        mainImg.src = imageUrl;
+    }
+
+    const thumbs = document.querySelectorAll('.thumbnail');
+    thumbs.forEach((t, i) => {
+        t.classList.remove('active');
+        if (t === thumbEl) {
+            currentImageIndex = i;
+        }
+    });
+    thumbEl.classList.add('active');
+}
+
+function scrollThumbnails(direction) {
+    if (galleryImages.length === 0) return;
+
+    currentImageIndex = (currentImageIndex + direction + galleryImages.length) % galleryImages.length;
+
+    const mainImg = document.getElementById('mainProductImage');
+    if (mainImg && mainImg.tagName === 'IMG') {
+        mainImg.src = galleryImages[currentImageIndex];
+    }
+
+    const thumbs = document.querySelectorAll('.thumbnail');
+    thumbs.forEach((t, i) => {
+        t.classList.toggle('active', i === currentImageIndex);
+    });
+
+    const activeThumb = thumbs[currentImageIndex];
+    if (activeThumb) {
+        activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('mainProductImage')) {
+        initGallery();
+    }
+});
+
+let searchDebounceTimer;
+
+function handleSearchInput(value) {
+    clearTimeout(searchDebounceTimer);
+    const box = document.getElementById('searchSuggestions');
+
+    if (value.trim().length < 2) {
+        box.innerHTML = '';
+        box.classList.remove('active');
+        return;
+    }
+
+    searchDebounceTimer = setTimeout(() => {
+        fetch(`/search-suggestions/?q=${encodeURIComponent(value)}`)
+            .then(response => response.json())
+            .then(data => {
+                renderSuggestions(data.results);
+            });
+    }, 300);
+}
+
+function renderSuggestions(results) {
+    const box = document.getElementById('searchSuggestions');
+
+    if (results.length === 0) {
+        box.innerHTML = '<div class="suggestion-empty">Mos mahsulot topilmadi</div>';
+        box.classList.add('active');
+        return;
+    }
+
+    box.innerHTML = results.map(r => `
+        <a href="${r.url}" class="suggestion-item">
+            ${r.image ? `<img src="${r.image}" alt="${r.name}">` : '<div class="suggestion-img-placeholder"></div>'}
+            <div class="suggestion-info">
+                <span class="suggestion-name">${r.name}</span>
+                <span class="suggestion-brand">${r.brand}</span>
+            </div>
+        </a>
+    `).join('');
+
+    box.classList.add('active');
+}
+
+document.addEventListener('click', function(e) {
+    const searchBox = document.querySelector('.search-box');
+    const suggestions = document.getElementById('searchSuggestions');
+    if (searchBox && !searchBox.contains(e.target)) {
+        suggestions.classList.remove('active');
+    }
+});
+
