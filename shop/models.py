@@ -116,6 +116,7 @@ class Order(models.Model):
     PAYMENT_CHOICES = [
         ('click', 'Click'),
         ('payme', 'Payme'),
+        ('cash', 'Naqd / joyida'),
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders', null=True,
@@ -213,3 +214,13 @@ class Banner(models.Model):
         return self.title or f"Banner {self.id}"
 
 
+
+
+class SearchQuery(models.Model):
+    """Telegram botdagi qidiruv tarixi (statistika uchun)."""
+    user_id = models.BigIntegerField(null=True, blank=True)
+    query_text = models.CharField(max_length=200)
+    searched_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.query_text

@@ -5,7 +5,7 @@ from google import genai
 from django.shortcuts import render,redirect,get_object_or_404
 from django.db.models import Q, Sum, Count
 from .models import Product, Category, Brand, Favorite, CartItem, Sale, Banner, Order, OrderItem
-6from datetime import timedelta
+from datetime import timedelta
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
