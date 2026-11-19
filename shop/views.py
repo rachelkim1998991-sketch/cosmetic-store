@@ -199,7 +199,7 @@ MAHSULOTLAR RO'YXATI:
     full_prompt = f"{system_prompt}\n\nSUHBAT TARIXI:\n{conversation_text}\nMijoz: {user_message}\nYordamchi:"
 
     try:
-        client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
+        client = genai.Client(api_key=os.getenv('GEMINI_API_KEY_SITE'))
         response = client.models.generate_content(
             model='gemini-3.6-flash',
             contents=full_prompt
